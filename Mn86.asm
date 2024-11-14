@@ -6,7 +6,11 @@
 	size: .word 10 # So phan tu trong mang
 #Cac cau nhac nhap du lieu
 	waiting: .asciiz "Dang doc du lieu...\n"
-	result: .asciiz "Mang sau khi sap xep la: "
+	originArr: .asciiz "[ MANG GOC: "
+	resultArr: .asciiz "[ MANG SAU KHI SAP XEP: "
+	close: .asciiz "]\n"
+	step1: .asciiz "MANG O BUOC "
+	step2: .asciiz ": "
 	filename: .asciiz "INT10.BIN"
 	space: .asciiz " "
 	newline: .asciiz "\n"
@@ -40,6 +44,7 @@ readFile:	# Doc file
 	syscall
 	move $t1, $v0	
 	
+	
 	bltz $t1, errorOpenFile  # Neu T1 < 0 thi doc loi
 	beqz $t1, closeFile # T1 == 0 thi doc thanh cong
 	
@@ -50,34 +55,36 @@ closeFile:
 	syscall
 #Xu ly
 	
-	    # Print array before sorting
-    move $s4, $zero            # i = 0
-    la $t0, arr                # Base address of array
+	# Print array before sorting
+	li $v0, 4
+	la $a0, originArr
+	syscall	
+	
+    	move $s4, $zero            # i = 0
+    	la $t0, arr                # Base address of array
 
 printArrayBeforeSort:
-    bge $s4, $t1, endPrintArrayBeforeSort # If i >= size, exit print loop
+    	bge $s4, 10, endPrintArrayBeforeSort # If i >= size, exit print loop
 
-    sll $t2, $s4, 2            # i * 4
-    add $t3, $t0, $t2          # Address of arr[i]
-    lw $a0, 0($t3)             # Load arr[i]
-    li $v0, 1
-    syscall                    # Print arr[i]
+   	 sll $t2, $s4, 2            # i * 4
+    	add $t3, $t0, $t2          # Address of arr[i]
+    	lw $a0, 0($t3)             # Load arr[i]
+    	li $v0, 1
+   	syscall                    # Print arr[i]
 
     # Print space between elements
-    la $a0, space
-    li $v0, 4
-    syscall
+    	la $a0, space
+    	li $v0, 4
+    	syscall
 
-    addi $s4, $s4, 1           # i++
-    j printArrayBeforeSort
+    	addi $s4, $s4, 1           # i++
+    	j printArrayBeforeSort
 
 endPrintArrayBeforeSort:
     # Print newline after array
-    la $a0, newline
-    li $v0, 4
-    syscall
-
-
+	li $v0, 4
+	la $a0, close
+	syscall
 
 	# Goi Selection Sort sau khi doc mang
 	la $a0, arr             # base address cua mang
@@ -88,6 +95,37 @@ endPrintArrayBeforeSort:
 	
 	jal selectionSort	# Goi hàm Selection Sort
 	
+	
+	# Print array after sorting
+	li $v0, 4
+	la $a0, resultArr
+	syscall	
+	
+    	move $s4, $zero            # i = 0
+    	la $t0, arr                # Base address of array
+    	
+printArrayAfterSort:
+    	bge $s4, 10, endPrintArrayAfterSort # If i >= size, exit print loop
+
+   	 sll $t2, $s4, 2            # i * 4
+    	add $t3, $t0, $t2          # Address of arr[i]
+    	lw $a0, 0($t3)             # Load arr[i]
+    	li $v0, 1
+   	syscall                    # Print arr[i]
+
+    # Print space between elements
+    	la $a0, space
+    	li $v0, 4
+    	syscall
+
+    	addi $s4, $s4, 1           # i++
+    	j printArrayAfterSort
+
+endPrintArrayAfterSort:
+    # Print newline after array
+	li $v0, 4
+	la $a0, close
+	syscall
 
 #ket thuc chuong trinh (syscall)
 Kthuc:	addi	$v0, $zero, 10
@@ -141,19 +179,28 @@ iFor:
 	jal swap
 
 	# Xuat ket qua
-	la $a0, result          # "Mang sau khi sap xep la: "
+	la $a0, step1          # "Mang o buoc "
 	li $v0, 4
 	syscall	
-			
+	
+	li $v0, 1
+	addi $a0, $s1, 1
+	syscall
+	
+	la $a0, step2      
+	li $v0, 4
+	syscall
+	
 # In ra mang sau khi sap xep
 	move $s4, $zero          # i = 0
 	la $t0, arr	
 	printArray:
 		la $t0, arr
-		bge $s4, $a1, endPrintArray
+		bge $s4, 10, endPrintArray
 		
 		sll $t2, $s4, 2         # i * 4
 		add $t3, $t0, $t2       # T3 = &arr[i]
+		
 		lw $a0, 0($t3)          # lay gia tri arr[i]
 		
 		li $v0, 1
@@ -171,7 +218,7 @@ iFor:
 		syscall
 
 	addi $s1, $s1, 1          # i++
-	j iFor               # quay lai vong lap
+	j iFor               # Quay lai vong lap
 
 iForExit:
 	lw $ra, 0($sp)            # Khoi phuc gia tri tu stack
